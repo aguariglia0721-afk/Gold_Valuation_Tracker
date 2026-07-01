@@ -13,6 +13,7 @@
 
   let state = loadState();
   let toastTimer = null;
+  let pendingImport = null;
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
@@ -39,7 +40,7 @@
 
   function normalizeState(input) {
     const next = clone(input);
-    next.version = 3;
+    next.version = 4;
     next.settings = next.settings || {};
     next.settings.spotPrice = positiveNumber(next.settings.spotPrice, DEFAULT_STATE.settings.spotPrice);
     next.settings.dealerPct = boundedNumber(next.settings.dealerPct, 0, 1, DEFAULT_STATE.settings.dealerPct);
@@ -356,13 +357,19 @@
     showToast("Item deleted.");
   }
 
-  function download(filename, text, type) {
-    const blob = new Blob([text], { type });
+  function downloadBlob(filename, blob) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 250);
+  }
+
+  function download(filename, text, type) {
+    downloadBlob(filename, new Blob([text], { type }));
   }
 
   function exportJson() {
@@ -388,6 +395,263 @@
       $("importJsonInput").value = "";
     };
     reader.readAsText(file);
+  }
+
+  const IMPORT_HEADERS = [
+    "Description", "Karat", "Gross Weight (g)", "Non-Gold Deduction (g)",
+    "Purity Override %", "Purchase Cost ($)", "Hallmark / Test Notes", "Status"
+  ];
+
+  const IMPORT_ALIASES = {
+    description: ["description", "item description", "item", "item name", "name"],
+    karat: ["karat", "carat", "karats", "carats", "gold karat", "gold purity"],
+    grossWeight: ["gross weight g", "gross weight", "weight g", "weight grams", "weight", "grams"],
+    deduction: ["non gold deduction g", "non gold deduction", "stone deduction g", "stone deduction", "deduction g", "deduction"],
+    purityOverride: ["purity override", "purity override percent", "custom purity", "custom purity percent", "applied purity", "applied purity percent", "purity percent"],
+    purchaseCost: ["purchase cost", "purchase price", "price paid", "cost", "cost dollars"],
+    notes: ["hallmark test notes", "hallmark notes", "test notes", "hallmark", "notes"],
+    status: ["verification status", "status"]
+  };
+
+  function normalizeHeader(value) {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/#/g, " number ")
+      .replace(/[$%()\/\\_-]+/g, " ")
+      .replace(/[^a-z0-9 ]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function mapHeaderRow(row) {
+    const mapping = {};
+    row.forEach((value, index) => {
+      const header = normalizeHeader(value);
+      if (!header) return;
+      for (const [field, aliases] of Object.entries(IMPORT_ALIASES)) {
+        if (mapping[field] === undefined && aliases.includes(header)) {
+          mapping[field] = index;
+          break;
+        }
+      }
+    });
+    return mapping;
+  }
+
+  function findHeader(rows) {
+    let best = null;
+    const limit = Math.min(rows.length, 30);
+    for (let rowIndex = 0; rowIndex < limit; rowIndex += 1) {
+      const mapping = mapHeaderRow(rows[rowIndex] || []);
+      const score = Object.keys(mapping).length;
+      const valid = mapping.description !== undefined && mapping.grossWeight !== undefined &&
+        (mapping.karat !== undefined || mapping.purityOverride !== undefined);
+      if (valid && (!best || score > best.score)) best = { rowIndex, mapping, score };
+    }
+    return best;
+  }
+
+  function parseNumber(value) {
+    if (typeof value === "number") return Number.isFinite(value) ? value : null;
+    const cleaned = String(value ?? "").trim().replace(/[$,%\s]/g, "").replace(/,/g, "");
+    if (!cleaned) return null;
+    const number = Number(cleaned);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function parsePurity(value) {
+    const number = parseNumber(value);
+    if (number === null || number < 0) return null;
+    const purity = number > 1 ? number / 100 : number;
+    return purity >= 0 && purity <= 1 ? purity : null;
+  }
+
+  function parseKarat(value) {
+    const raw = String(value ?? "").trim().toUpperCase().replace(/\s+/g, "");
+    if (!raw) return null;
+    const hallmarkMap = { "999":"24K", "999.9":"24K", "916":"22K", "750":"18K", "585":"14K", "583":"14K", "417":"10K", "416":"10K" };
+    if (hallmarkMap[raw]) return hallmarkMap[raw];
+    const match = raw.match(/(24|22|18|14|10)(?:K|KT|CARAT|KARAT)?/);
+    if (match) return `${match[1]}K`;
+    if (raw === "CUSTOM") return "Custom";
+    return null;
+  }
+
+  function inferKaratFromPurity(purity) {
+    if (purity === null) return null;
+    const match = Object.entries(PURITIES).find(([, standard]) => Math.abs(standard - purity) <= 0.004);
+    return match ? match[0] : "Custom";
+  }
+
+  function normalizeStatus(value) {
+    const allowed = ["Unverified", "Hallmark Only", "Acid Tested", "XRF Tested", "Sold", "Keep / Investment"];
+    const raw = String(value ?? "").trim();
+    const match = allowed.find(item => item.toLowerCase() === raw.toLowerCase());
+    return match || "Unverified";
+  }
+
+  function parseImportRows(rows, sourceName) {
+    const header = findHeader(rows);
+    if (!header) return { items: [], errors: [`${sourceName}: no recognized header row was found.`], score: 0 };
+
+    const items = [];
+    const errors = [];
+    const { mapping } = header;
+    for (let rowIndex = header.rowIndex + 1; rowIndex < rows.length; rowIndex += 1) {
+      const row = rows[rowIndex] || [];
+      if (row.every(value => String(value ?? "").trim() === "")) continue;
+
+      const get = field => mapping[field] === undefined ? "" : row[mapping[field]];
+      const description = String(get("description") ?? "").trim();
+      const grossWeight = parseNumber(get("grossWeight"));
+      let karat = parseKarat(get("karat"));
+      const purityOverride = parsePurity(get("purityOverride"));
+
+      if (/^totals?$/i.test(description)) continue;
+      if (!description && grossWeight === null && !karat && purityOverride === null) continue;
+      if (!description) {
+        errors.push(`Row ${rowIndex + 1}: description is missing.`);
+        continue;
+      }
+      if (grossWeight === null || grossWeight <= 0) {
+        errors.push(`Row ${rowIndex + 1} (${description}): gross weight must be greater than zero.`);
+        continue;
+      }
+      if (!karat) karat = inferKaratFromPurity(purityOverride);
+      if (!karat) {
+        errors.push(`Row ${rowIndex + 1} (${description}): karat or purity is not recognized.`);
+        continue;
+      }
+
+      const deductionValue = parseNumber(get("deduction"));
+      const deduction = Math.min(Math.max(deductionValue ?? 0, 0), grossWeight);
+      const purchaseValue = parseNumber(get("purchaseCost"));
+      const effectiveOverride = purityOverride !== null && (karat === "Custom" || mapping.purityOverride !== undefined)
+        ? purityOverride : null;
+
+      items.push({
+        id: items.length + 1,
+        description,
+        karat,
+        grossWeight,
+        deduction,
+        purityOverride: effectiveOverride,
+        purchaseCost: purchaseValue === null ? null : Math.max(purchaseValue, 0),
+        notes: String(get("notes") ?? "").trim(),
+        status: normalizeStatus(get("status")),
+      });
+    }
+    return { items, errors, score: header.score };
+  }
+
+  function readFileAsArrayBuffer(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error("Unable to read file."));
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function parseSpreadsheetFile(file) {
+    if (!window.XLSX) throw new Error("Spreadsheet reader did not load.");
+    const buffer = await readFileAsArrayBuffer(file);
+    const workbook = XLSX.read(buffer, { type: "array", cellDates: false, raw: true });
+    let best = null;
+    for (const sheetName of workbook.SheetNames) {
+      const worksheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "", raw: true, blankrows: false });
+      const parsed = parseImportRows(rows, sheetName);
+      if (parsed.items.length && (!best || parsed.items.length > best.items.length || parsed.score > best.score)) {
+        best = { ...parsed, sheetName };
+      } else if (!best && parsed.errors.length) {
+        best = { ...parsed, sheetName };
+      }
+    }
+    if (!best || !best.items.length) {
+      const detail = best?.errors?.join(" ") || "No valid gold item rows were found.";
+      throw new Error(detail);
+    }
+    return best;
+  }
+
+  function showImportReview(file, parsed) {
+    pendingImport = parsed;
+    $("importFileName").textContent = file.name;
+    $("importSummary").textContent = `${parsed.items.length} valid item${parsed.items.length === 1 ? "" : "s"} found on sheet “${parsed.sheetName}”.`;
+    $("importPreviewBody").innerHTML = parsed.items.slice(0, 10).map(item => `
+      <tr>
+        <td>${escapeHtml(item.description)}</td>
+        <td>${escapeHtml(item.karat)}</td>
+        <td>${grams(item.grossWeight)}</td>
+        <td>${grams(item.deduction)}</td>
+        <td>${item.purchaseCost === null ? "—" : money(item.purchaseCost)}</td>
+      </tr>`).join("");
+    const more = parsed.items.length > 10 ? `<p>Plus ${parsed.items.length - 10} additional item(s).</p>` : "";
+    if (parsed.errors.length) {
+      $("importErrors").classList.remove("hidden");
+      $("importErrors").innerHTML = `<strong>${parsed.errors.length} row(s) skipped</strong><ul>${parsed.errors.slice(0, 12).map(error => `<li>${escapeHtml(error)}</li>`).join("")}</ul>${more}`;
+    } else {
+      $("importErrors").classList.add("hidden");
+      $("importErrors").innerHTML = more;
+    }
+    $("importModeAppend").checked = true;
+    $("importDialog").showModal();
+  }
+
+  async function importSpreadsheet(file) {
+    if (!file) return;
+    $("saveStatus").textContent = `Reading ${file.name}…`;
+    try {
+      const parsed = await parseSpreadsheetFile(file);
+      showImportReview(file, parsed);
+      $("saveStatus").textContent = "File ready for review.";
+    } catch (error) {
+      alert(`The file could not be imported. ${error.message || error}`);
+      $("saveStatus").textContent = "Import was not completed.";
+    } finally {
+      $("importDataInput").value = "";
+    }
+  }
+
+  function closeImportDialog() {
+    pendingImport = null;
+    $("importDialog").close();
+  }
+
+  function confirmSpreadsheetImport() {
+    if (!pendingImport?.items?.length) return;
+    const replace = $("importModeReplace").checked;
+    const startId = replace || state.items.length === 0 ? 1 : nextId();
+    const imported = pendingImport.items.map((item, index) => ({ ...item, id: startId + index }));
+    state.items = replace ? imported : [...state.items, ...imported];
+    saveState(`${imported.length} imported item(s) saved locally.`);
+    $("importDialog").close();
+    pendingImport = null;
+    renderAll();
+    setTab("items");
+    showToast(`${imported.length} item${imported.length === 1 ? "" : "s"} imported.`);
+  }
+
+  function downloadCsvTemplate() {
+    const text = "\ufeff" + IMPORT_HEADERS.map(csvCell).join(",") + "\r\n";
+    download("gold-tracker-import-template.csv", text, "text/csv;charset=utf-8");
+    showToast("CSV template downloaded.");
+  }
+
+  function downloadExcelTemplate() {
+    if (!window.XLSX) {
+      alert("The Excel template tool did not load. Please refresh the app.");
+      return;
+    }
+    const worksheet = XLSX.utils.aoa_to_sheet([IMPORT_HEADERS]);
+    worksheet["!cols"] = [{wch:28},{wch:10},{wch:18},{wch:22},{wch:20},{wch:18},{wch:30},{wch:20}];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Gold Items");
+    const bytes = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+    downloadBlob("gold-tracker-import-template.xlsx", new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    showToast("Excel template downloaded.");
   }
 
   function csvCell(value) {
@@ -466,6 +730,12 @@
     $("itemKarat").addEventListener("change", () => { updatePurityField(); updatePreview(); });
     $("exportJsonBtn").addEventListener("click", exportJson);
     $("importJsonInput").addEventListener("change", e => importJson(e.target.files[0]));
+    $("importDataInput").addEventListener("change", e => importSpreadsheet(e.target.files[0]));
+    $("downloadCsvTemplateBtn").addEventListener("click", downloadCsvTemplate);
+    $("downloadExcelTemplateBtn").addEventListener("click", downloadExcelTemplate);
+    $("closeImportBtn").addEventListener("click", closeImportDialog);
+    $("cancelImportBtn").addEventListener("click", closeImportDialog);
+    $("confirmImportBtn").addEventListener("click", confirmSpreadsheetImport);
     $("exportCsvBtn").addEventListener("click", exportCsv);
     $("copySummaryBtn").addEventListener("click", copySummary);
     $("resetBtn").addEventListener("click", resetState);
@@ -477,6 +747,6 @@
   renderAll();
 
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=3.0.0", { updateViaCache: "none" }).catch(() => {}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=4.1.0", { updateViaCache: "none" }).catch(() => {}));
   }
 })();

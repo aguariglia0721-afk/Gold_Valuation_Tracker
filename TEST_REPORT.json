@@ -1,0 +1,124 @@
+{
+  "smoke": [
+    {
+      "profile": "Desktop_Chrome",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "assetsChecked": 7,
+      "initialZero": true,
+      "tabs": true,
+      "installHelp": true,
+      "csvImport": true,
+      "excelImport": true,
+      "localPersistence": true,
+      "noHorizontalOverflow": true,
+      "errors": 0
+    },
+    {
+      "profile": "iPhone_15_Pro_Max",
+      "viewport": {
+        "width": 430,
+        "height": 932
+      },
+      "assetsChecked": 7,
+      "initialZero": true,
+      "tabs": true,
+      "installHelp": true,
+      "csvImport": true,
+      "excelImport": true,
+      "localPersistence": true,
+      "noHorizontalOverflow": true,
+      "errors": 0
+    },
+    {
+      "profile": "iPad_Pro_11",
+      "viewport": {
+        "width": 834,
+        "height": 1194
+      },
+      "assetsChecked": 7,
+      "initialZero": true,
+      "tabs": true,
+      "installHelp": true,
+      "csvImport": true,
+      "excelImport": true,
+      "localPersistence": true,
+      "noHorizontalOverflow": true,
+      "errors": 0
+    },
+    {
+      "profile": "Android_Pixel_8",
+      "viewport": {
+        "width": 412,
+        "height": 915
+      },
+      "assetsChecked": 7,
+      "initialZero": true,
+      "tabs": true,
+      "installHelp": true,
+      "csvImport": true,
+      "excelImport": true,
+      "localPersistence": true,
+      "noHorizontalOverflow": true,
+      "errors": 0
+    }
+  ],
+  "actions": [
+    {
+      "profile": "Desktop",
+      "jsonImport": true,
+      "downloads": 4,
+      "copySummary": true,
+      "clearAll": true,
+      "errors": 0
+    },
+    {
+      "profile": "iPhone",
+      "jsonImport": true,
+      "downloads": 4,
+      "copySummary": true,
+      "clearAll": true,
+      "errors": 0
+    },
+    {
+      "profile": "iPad",
+      "jsonImport": true,
+      "downloads": 4,
+      "copySummary": true,
+      "clearAll": true,
+      "errors": 0
+    },
+    {
+      "profile": "Android",
+      "jsonImport": true,
+      "downloads": 4,
+      "copySummary": true,
+      "clearAll": true,
+      "errors": 0
+    }
+  ],
+  "offline": [
+    {
+      "profile": "Desktop",
+      "offlineReload": true
+    },
+    {
+      "profile": "iPhone",
+      "offlineReload": true
+    },
+    {
+      "profile": "iPad",
+      "offlineReload": true
+    },
+    {
+      "profile": "Android",
+      "offlineReload": true
+    }
+  ],
+  "actualWorkbookImport": {
+    "passed": true,
+    "items": 10
+  }
+}

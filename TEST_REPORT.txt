@@ -1,0 +1,54 @@
+GOLD TRACKER WEB APP VERSION 4.1 — TEST REPORT
+
+FINAL RESULT: PASS
+
+PLATFORMS / VIEWPORT PROFILES
+- Desktop Chrome: 1440 × 900
+- iPhone 15 Pro Max profile: 430 × 932, touch enabled
+- iPad Pro 11 profile: 834 × 1194, touch enabled
+- Android Pixel 8 profile: 412 × 915, touch enabled
+
+TESTS PASSED ON ALL FOUR PROFILES
+- App starts with zero items, zero weight, and $0.00 valuation.
+- Dashboard, Items, Reference, and Data navigation controls open correctly.
+- Install App help opens and includes iPhone/iPad, Android, and desktop instructions.
+- All linked application assets load successfully.
+- No page-level horizontal overflow was detected.
+- CSV import succeeds and imported records are calculated.
+- Excel XLSX import succeeds and imported records are calculated.
+- Imported records persist after reload in local device/browser storage.
+- JSON backup import succeeds.
+- Export Backup download succeeds.
+- Export CSV download succeeds.
+- CSV Import Template download succeeds.
+- Excel Import Template download succeeds.
+- Copy Summary succeeds.
+- Clear All Data returns the app to zero.
+- Offline reload succeeds after the first hosted load.
+- No JavaScript page errors, console errors, or failed application requests were detected.
+
+ADDITIONAL EXCEL COMPATIBILITY TEST
+- The user's original Gold_Valuation_Tracker.xlsx was uploaded through the app.
+- The app found the Item Calculator header row automatically.
+- All 10 items imported successfully.
+- Descriptions, karats, gross weights, and non-gold deductions were preserved.
+
+SUPPORTED IMPORT FORMATS
+- CSV (.csv)
+- Excel Workbook (.xlsx)
+- Legacy Excel Workbook (.xls) through the bundled spreadsheet reader
+
+SUPPORTED IMPORT FIELDS
+Required:
+- Description
+- Gross Weight (g)
+- Karat, or Purity Override %
+
+Optional:
+- Non-Gold Deduction (g)
+- Purchase Cost ($)
+- Hallmark / Test Notes
+- Status
+
+IMPORTANT TESTING SCOPE
+These tests were run through automated Chromium browser/device emulation using the listed screen sizes, touch settings, and mobile user-agent profiles. They verify responsive layout and application behavior, but they are not a substitute for a final check on physical iPhone, iPad, and Android hardware after the site is published.

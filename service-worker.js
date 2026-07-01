@@ -1,13 +1,14 @@
-const CACHE_NAME = "gold-valuation-tracker-v3";
+const CACHE_NAME = "gold-valuation-tracker-v4-1";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=3.0.0",
-  "./app.js?v=3.0.0",
-  "./manifest.webmanifest?v=3.0.0",
-  "./icons/icon-192.png?v=3.0.0",
+  "./styles.css?v=4.1.0",
+  "./vendor/xlsx.full.min.js?v=4.1.0",
+  "./app.js?v=4.1.0",
+  "./manifest.webmanifest?v=4.1.0",
+  "./icons/icon-192.png?v=4.1.0",
   "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png?v=3.0.0"
+  "./icons/apple-touch-icon.png?v=4.1.0"
 ];
 
 self.addEventListener("install", event => {
@@ -17,17 +18,13 @@ self.addEventListener("install", event => {
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
-    ).then(() => self.clients.claim())
+    caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", event => {
   if (event.request.method !== "GET") return;
-
-  // Always try the network first for navigations so a newly published
-  // blank build replaces an older cached/preloaded version promptly.
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request, { cache: "no-store" })
@@ -40,8 +37,6 @@ self.addEventListener("fetch", event => {
     );
     return;
   }
-
-  // Network-first for versioned application files, cache fallback offline.
   event.respondWith(
     fetch(event.request)
       .then(response => {

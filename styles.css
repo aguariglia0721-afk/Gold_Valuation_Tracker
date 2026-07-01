@@ -263,3 +263,21 @@ dialog::backdrop { background: rgba(33,24,18,.62); backdrop-filter: blur(3px); }
   body { background: white; }
   .card { box-shadow: none; break-inside: avoid; }
 }
+
+
+/* Version 4 spreadsheet import */
+#importDialog { padding: 18px; }
+.import-file-name { margin-bottom: 4px; font-weight: 800; word-break: break-word; }
+.import-summary { margin-bottom: 14px; color: var(--muted); }
+.import-mode { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 14px; padding: 12px; border-radius: 12px; background: var(--cream); }
+.import-mode label { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: .9rem; }
+.import-mode input { width: 20px; min-height: 20px; height: 20px; margin: 0; }
+.import-preview-wrap { max-height: 300px; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 12px; }
+.import-preview-table { min-width: 620px; }
+.import-preview-table th, .import-preview-table td { padding: 9px 10px; font-size: .82rem; }
+.import-errors { max-height: 150px; overflow: auto; margin: 10px 0; padding: 12px; border-left: 4px solid var(--negative); border-radius: 8px; color: #6f211c; background: #fff0ee; font-size: .84rem; line-height: 1.45; }
+.import-errors ul { margin: 7px 0 0; padding-left: 20px; }
+@media (max-width: 430px) {
+  #importDialog { width: calc(100% - 16px); max-height: calc(100vh - 16px); padding: 14px; }
+  .import-mode { display: grid; }
+}

@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Gold Tracker">
   <meta name="description" content="Interactive gold purity and investment valuation tracker.">
-  <link rel="manifest" href="manifest.webmanifest?v=3.0.0">
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=3.0.0">
-  <link rel="icon" href="icons/icon-192.png?v=3.0.0">
-  <link rel="stylesheet" href="styles.css?v=3.0.0">
+  <link rel="manifest" href="manifest.webmanifest?v=4.1.0">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=4.1.0">
+  <link rel="icon" href="icons/icon-192.png?v=4.1.0">
+  <link rel="stylesheet" href="styles.css?v=4.1.0">
   <title>Gold Valuation Tracker</title>
 </head>
 <body>
@@ -21,7 +21,7 @@
         <p class="eyebrow">Gold Purity Valuation</p>
         <h1>Gold Valuation Tracker</h1>
       </div>
-      <button class="icon-button" id="installHelpBtn" aria-label="iPhone installation help">iPhone Install</button>
+      <button class="icon-button" id="installHelpBtn" aria-label="installation help">Install App</button>
     </header>
 
     <nav class="tabbar" aria-label="Main navigation">
@@ -192,6 +192,16 @@
             <strong>Import Backup</strong><span>Restore a JSON backup file.</span>
             <input id="importJsonInput" type="file" accept="application/json,.json">
           </label>
+          <label class="action-card file-action" id="importDataCard">
+            <strong>Import CSV / Excel</strong><span>Add gold items from .csv, .xlsx, or .xls files.</span>
+            <input id="importDataInput" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          </label>
+          <button class="action-card" id="downloadCsvTemplateBtn">
+            <strong>CSV Import Template</strong><span>Download a correctly labeled blank CSV template.</span>
+          </button>
+          <button class="action-card" id="downloadExcelTemplateBtn">
+            <strong>Excel Import Template</strong><span>Download a correctly labeled blank Excel template.</span>
+          </button>
           <button class="action-card" id="exportCsvBtn">
             <strong>Export CSV</strong><span>Open the current ledger in Excel or Numbers.</span>
           </button>
@@ -280,25 +290,61 @@
     </form>
   </dialog>
 
+
+  <dialog id="importDialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">Spreadsheet Import</p>
+        <h2>Review Imported Items</h2>
+      </div>
+      <button type="button" class="close-button" id="closeImportBtn" aria-label="Close">×</button>
+    </div>
+    <p id="importFileName" class="import-file-name"></p>
+    <p id="importSummary" class="import-summary"></p>
+    <div class="import-mode" role="group" aria-label="Import mode">
+      <label><input type="radio" name="importMode" id="importModeAppend" value="append" checked> Add to existing items</label>
+      <label><input type="radio" name="importMode" id="importModeReplace" value="replace"> Replace existing items</label>
+    </div>
+    <div class="table-wrap import-preview-wrap">
+      <table class="import-preview-table">
+        <thead><tr><th>Description</th><th>Karat</th><th>Gross Weight</th><th>Deduction</th><th>Cost</th></tr></thead>
+        <tbody id="importPreviewBody"></tbody>
+      </table>
+    </div>
+    <div id="importErrors" class="import-errors hidden"></div>
+    <div class="dialog-actions">
+      <button type="button" class="secondary-button" id="cancelImportBtn">Cancel</button>
+      <button type="button" class="primary-button" id="confirmImportBtn">Import Items</button>
+    </div>
+  </dialog>
+
   <dialog id="installDialog">
     <div class="dialog-header">
       <div>
-        <p class="eyebrow">iPhone</p>
-        <h2>Install on Home Screen</h2>
+        <p class="eyebrow">Install</p>
+        <h2>Install Gold Tracker</h2>
       </div>
       <button type="button" class="close-button" id="closeInstallBtn" aria-label="Close">×</button>
     </div>
+    <h3>iPhone or iPad</h3>
     <ol class="install-steps">
       <li>Open the hosted app link in <strong>Safari</strong>.</li>
-      <li>Tap the <strong>Share</strong> button.</li>
-      <li>Scroll and select <strong>Add to Home Screen</strong>.</li>
+      <li>Tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li>
       <li>Keep the name “Gold Tracker” and tap <strong>Add</strong>.</li>
     </ol>
-    <p>The app will then open from its gold icon and continue working offline after its first successful load.</p>
+    <h3>Android</h3>
+    <ol class="install-steps">
+      <li>Open the hosted app link in <strong>Chrome</strong>.</li>
+      <li>Open the browser menu and choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</li>
+    </ol>
+    <h3>Desktop</h3>
+    <p>Use the install icon in the browser address bar when available, or continue using the app in the browser.</p>
+    <p>The installed app opens from its gold icon and can continue working offline after its first successful load.</p>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script>window.DEFAULT_GOLD_STATE = {"version":3,"settings":{"spotPrice":3434.37,"dealerPct":0.9,"pawnPct":0.75,"gramsPerOz":31.1035,"valuationDate":""},"items":[]};</script>
-  <script src="app.js?v=3.0.0"></script>
+  <script>window.DEFAULT_GOLD_STATE = {"version":4,"settings":{"spotPrice":3434.37,"dealerPct":0.9,"pawnPct":0.75,"gramsPerOz":31.1035,"valuationDate":""},"items":[]};</script>
+  <script src="vendor/xlsx.full.min.js?v=4.1.0"></script>
+  <script src="app.js?v=4.1.0"></script>
 </body>
 </html>
