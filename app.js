@@ -2,7 +2,8 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "goldValuationTracker.v2";
+  const STORAGE_KEY = "goldValuationTracker.v3";
+  const LEGACY_STORAGE_KEYS = ["goldValuationTracker.v1", "goldValuationTracker.v2"];
   const PURITIES = { "24K": 1, "22K": 0.916, "18K": 0.75, "14K": 0.583, "10K": 0.417 };
   const HALLMARKS = { "24K": "999 / 999.9", "22K": "916", "18K": "750", "14K": "583 / 585", "10K": "416 / 417", "Custom": "Tested purity" };
   const DEFAULT_STATE = JSON.parse(JSON.stringify(window.DEFAULT_GOLD_STATE));
@@ -17,15 +18,28 @@
 
   function loadState() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-      if (saved && saved.settings && Array.isArray(saved.items)) return normalizeState(saved);
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved && saved.settings && Array.isArray(saved.items)) {
+          LEGACY_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+          return normalizeState(saved);
+        }
+      }
     } catch (_) {}
+
+    // This publish-ready build intentionally starts blank and removes
+    // the earlier demo/preloaded data keys from this browser.
+    try {
+      LEGACY_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+    } catch (_) {}
+
     return normalizeState(clone(DEFAULT_STATE));
   }
 
   function normalizeState(input) {
     const next = clone(input);
-    next.version = 2;
+    next.version = 3;
     next.settings = next.settings || {};
     next.settings.spotPrice = positiveNumber(next.settings.spotPrice, DEFAULT_STATE.settings.spotPrice);
     next.settings.dealerPct = boundedNumber(next.settings.dealerPct, 0, 1, DEFAULT_STATE.settings.dealerPct);
@@ -425,11 +439,11 @@
   }
 
   function resetState() {
-    if (!confirm("Clear every item and all data saved by this app on this device?")) return;
+    if (!confirm("Clear every gold item and all app data saved on this device?")) return;
     state = normalizeState(clone(DEFAULT_STATE));
     saveState("Blank tracker saved locally.");
     renderAll();
-    showToast("All app data cleared.");
+    showToast("All saved app data cleared.");
   }
 
   function showToast(message) {
@@ -463,6 +477,6 @@
   renderAll();
 
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(() => {}));
+    window.addEventListener("load", () => navigator.serviceWorker.register("service-worker.js?v=3.0.0", { updateViaCache: "none" }).catch(() => {}));
   }
 })();

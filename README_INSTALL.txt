@@ -1,38 +1,49 @@
 GOLD TRACKER — IPHONE WEB APP
-PUBLISH-READY BLANK VERSION 2
+PUBLISH-READY BLANK VERSION 3
 
-CURRENT BEHAVIOR
-- The item calculator opens completely blank.
-- Dashboard quantities and values begin at zero.
-- Users add only their own gold items.
-- Every change is automatically saved in the browser on that user’s device.
-- One user’s information is not included in the published app and is not shared with other users.
-- JSON backup/restore and CSV export remain available.
-- The current Gold Tracker icon is included.
-- The app supports offline use after its first successful hosted load.
+VERIFIED STARTING CONDITION
+- Items: 0
+- Gross weight: 0.000 g
+- Pure gold: 0.000 g
+- Full melt value: $0.00
+- Dealer estimate: $0.00
+- Pawn estimate: $0.00
+- Purchase cost: $0.00
+- The item calculator contains no preloaded gold items.
 
-STARTING VALUATION SETTINGS
+LOCAL DEVICE SAVING
+- Each user’s additions and edits are automatically stored in that user’s browser.
+- The app uses a new Version 3 storage area.
+- Earlier demo/preloaded Version 1 and Version 2 storage keys are removed when Version 3 first opens.
+- One user’s information is not included in the published ZIP and is not shared with another user.
+- Export Backup creates a JSON backup.
+- Import Backup restores that user’s JSON file.
+- Export CSV creates a spreadsheet-compatible ledger.
+
+CACHE CORRECTION
+- Version 3 uses a new service-worker cache.
+- Page navigation uses a network-first update method so an older preloaded app is not repeatedly shown from cache.
+- The main application files include Version 3 cache-busting identifiers.
+
+STARTING REFERENCE SETTINGS
 - Gold spot price: $3,434.37 per troy ounce
 - Dealer payout model: 90%
 - Pawn payout model: 75%
 - Grams per troy ounce: 31.1035
-These settings can be changed by each user and are then saved on that device.
+These are reference settings, not inventory. Each user may change them.
 
-HOW TO PUBLISH
-1. Unzip this package on a computer.
-2. Upload the CONTENTS of the unzipped folder to an HTTPS web host.
-3. For Netlify, drag the entire unzipped folder into the Netlify deployment area.
-4. Open the resulting secure web address in Safari on the iPhone.
-5. Tap Share.
-6. Tap Add to Home Screen.
-7. Keep the name “Gold Tracker” and tap Add.
+PUBLISHING
+1. Delete the previously extracted app folder from the computer.
+2. Unzip this Version 3 package into a new empty folder.
+3. Upload the entire contents of that new folder to the hosting service.
+4. Do not merge these files into the previous deployment folder.
+5. After publishing, open the site once in Safari and refresh it.
+6. Add it to the Home Screen as “Gold Tracker.”
 
-DEVICE STORAGE
-- App information is stored with browser local storage on the individual device.
-- Clearing Safari website data can erase the saved entries.
-- Export a JSON backup before replacing a phone, clearing browser data, or moving the records.
-- Import Backup restores the user’s saved JSON file on another device.
+For an existing installed copy that still shows old items:
+1. Remove the old Gold Tracker icon from the iPhone Home Screen.
+2. In Safari, open the newly published Version 3 address.
+3. Refresh the page.
+4. Add it to the Home Screen again.
 
-PRIVACY AND VALUATION NOTICE
-- The published package contains no preloaded personal gold inventory.
-- Melt and payout amounts are estimates and do not replace professional testing or a binding purchase offer.
+Data is stored on the individual device. Clearing Safari website data can remove it, so users should export backups regularly.
