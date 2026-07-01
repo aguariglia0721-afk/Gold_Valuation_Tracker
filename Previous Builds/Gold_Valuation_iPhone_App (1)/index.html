@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#3b2a20">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gold Tracker">
+  <meta name="description" content="Interactive gold purity and investment valuation tracker.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <title>Gold Valuation Tracker</title>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Gold Purity Valuation</p>
+        <h1>Gold Valuation Tracker</h1>
+      </div>
+      <button class="icon-button" id="installHelpBtn" aria-label="iPhone installation help">iPhone Install</button>
+    </header>
+
+    <nav class="tabbar" aria-label="Main navigation">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="items">Items</button>
+      <button class="tab" data-tab="reference">Reference</button>
+      <button class="tab" data-tab="data">Data</button>
+    </nav>
+
+    <main>
+      <section class="panel active" id="dashboardPanel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Portfolio</p>
+            <h2>Valuation Dashboard</h2>
+          </div>
+          <button class="primary-button" id="addFromDashboard">Add Gold Item</button>
+        </div>
+
+        <div class="settings-card card">
+          <div class="field">
+            <label for="spotPrice">Gold spot price ($/troy oz)</label>
+            <input id="spotPrice" type="number" min="0" step="0.01" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="dealerPct">Dealer payout (%)</label>
+            <input id="dealerPct" type="number" min="0" max="100" step="0.1" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="pawnPct">Pawn payout (%)</label>
+            <input id="pawnPct" type="number" min="0" max="100" step="0.1" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="valuationDate">Valuation date</label>
+            <input id="valuationDate" type="date">
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric card">
+            <span>Items</span><strong id="metricItems">0</strong>
+          </article>
+          <article class="metric card">
+            <span>Gross weight</span><strong id="metricGross">0.000 g</strong>
+          </article>
+          <article class="metric card">
+            <span>Pure gold</span><strong id="metricPure">0.000 g</strong>
+          </article>
+          <article class="metric card emphasis">
+            <span>Full melt value</span><strong id="metricMelt">$0.00</strong>
+          </article>
+          <article class="metric card">
+            <span>Dealer estimate</span><strong id="metricDealer">$0.00</strong>
+          </article>
+          <article class="metric card">
+            <span>Pawn estimate</span><strong id="metricPawn">$0.00</strong>
+          </article>
+          <article class="metric card">
+            <span>75% of dealer estimate</span><strong id="metricConservative">$0.00</strong>
+          </article>
+          <article class="metric card">
+            <span>Purchase cost</span><strong id="metricCost">$0.00</strong>
+          </article>
+          <article class="metric card" id="gainCard">
+            <span>Gain/(loss) at dealer</span><strong id="metricGain">$0.00</strong>
+          </article>
+        </div>
+
+        <div class="card summary-card">
+          <div class="card-title-row">
+            <h3>Value by Karat</h3>
+            <span id="summaryAsOf"></span>
+          </div>
+          <div id="karatBars" class="bar-list"></div>
+        </div>
+
+        <div class="card caution">
+          <strong>Valuation reminder</strong>
+          <p>Full melt value is a theoretical intrinsic value before refining, testing, shipping, transaction costs, and buyer margin. Hallmarks should be verified when material value is involved.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="itemsPanel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Ledger</p>
+            <h2>Gold Items</h2>
+          </div>
+          <button class="primary-button" id="addItemBtn">Add Item</button>
+        </div>
+
+        <div class="filters card">
+          <div class="field grow">
+            <label for="searchItems">Search</label>
+            <input id="searchItems" type="search" placeholder="Bracelet, ring, pendant…">
+          </div>
+          <div class="field">
+            <label for="filterKarat">Karat</label>
+            <select id="filterKarat">
+              <option value="">All</option>
+              <option>24K</option><option>22K</option><option>18K</option>
+              <option>14K</option><option>10K</option><option>Custom</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sortItems">Sort</label>
+            <select id="sortItems">
+              <option value="id">Item number</option>
+              <option value="meltDesc">Melt value: high to low</option>
+              <option value="weightDesc">Weight: high to low</option>
+              <option value="karatDesc">Karat: high to low</option>
+              <option value="description">Description</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="itemsList" class="items-list"></div>
+        <div id="emptyItems" class="empty-state hidden">
+          <h3>No matching items</h3>
+          <p>Add an item or adjust the filters.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="referencePanel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Purity & Rates</p>
+            <h2>Reference Table</h2>
+          </div>
+        </div>
+        <div class="card table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Karat</th><th>Purity</th><th>Hallmark</th>
+                <th>Melt / g</th><th>Dealer / g</th><th>Pawn / g</th>
+              </tr>
+            </thead>
+            <tbody id="referenceBody"></tbody>
+          </table>
+        </div>
+        <div class="card formula-card">
+          <h3>Intrinsic Valuation Formula</h3>
+          <code>Net gold-bearing weight × purity × (spot price ÷ 31.1035)</code>
+          <p>Deduct stones, springs, watch movements, clasps, and other non-gold components when appropriate.</p>
+        </div>
+        <div class="card">
+          <h3>Verification Status</h3>
+          <p><strong>Hallmark Only:</strong> marked purity but not independently verified.</p>
+          <p><strong>Acid Tested:</strong> tested with an acid kit.</p>
+          <p><strong>XRF Tested:</strong> analyzed using X-ray fluorescence equipment.</p>
+        </div>
+      </section>
+
+      <section class="panel" id="dataPanel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Backup & Transfer</p>
+            <h2>Data Management</h2>
+          </div>
+        </div>
+
+        <div class="action-grid">
+          <button class="action-card" id="exportJsonBtn">
+            <strong>Export Backup</strong><span>Save all settings and items as JSON.</span>
+          </button>
+          <label class="action-card file-action">
+            <strong>Import Backup</strong><span>Restore a JSON backup file.</span>
+            <input id="importJsonInput" type="file" accept="application/json,.json">
+          </label>
+          <button class="action-card" id="exportCsvBtn">
+            <strong>Export CSV</strong><span>Open the current ledger in Excel or Numbers.</span>
+          </button>
+          <button class="action-card" id="copySummaryBtn">
+            <strong>Copy Summary</strong><span>Copy totals for a message, note, or email.</span>
+          </button>
+          <button class="action-card danger-outline" id="resetBtn">
+            <strong>Reset to Completed Tracker</strong><span>Restore the 10 original items from the uploaded workbook.</span>
+          </button>
+        </div>
+
+        <div class="card">
+          <h3>Storage</h3>
+          <p>This app automatically saves changes in the browser on this device. Export a backup before clearing Safari data or moving to another phone.</p>
+          <p id="saveStatus" class="save-status">Saved locally.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="itemDialog">
+    <form method="dialog" id="itemForm">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">Gold Item</p>
+          <h2 id="dialogTitle">Add Item</h2>
+        </div>
+        <button type="button" class="close-button" id="closeDialogBtn" aria-label="Close">×</button>
+      </div>
+      <input type="hidden" id="itemId">
+
+      <div class="form-grid">
+        <div class="field full">
+          <label for="itemDescription">Description</label>
+          <input id="itemDescription" required maxlength="80" placeholder="Gold bracelet, necklace, ring…">
+        </div>
+        <div class="field">
+          <label for="itemKarat">Karat</label>
+          <select id="itemKarat" required>
+            <option value="24K">24K</option><option value="22K">22K</option>
+            <option value="18K">18K</option><option value="14K" selected>14K</option>
+            <option value="10K">10K</option><option value="Custom">Custom</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="grossWeight">Gross weight (g)</label>
+          <input id="grossWeight" type="number" required min="0" step="0.001" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="deduction">Non-gold deduction (g)</label>
+          <input id="deduction" type="number" min="0" step="0.001" value="0" inputmode="decimal">
+        </div>
+        <div class="field" id="purityOverrideField">
+          <label for="purityOverride">Purity override (%)</label>
+          <input id="purityOverride" type="number" min="0" max="100" step="0.1" inputmode="decimal" placeholder="Required for Custom">
+        </div>
+        <div class="field">
+          <label for="purchaseCost">Purchase cost ($)</label>
+          <input id="purchaseCost" type="number" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="field">
+          <label for="itemStatus">Verification status</label>
+          <select id="itemStatus">
+            <option>Unverified</option><option>Hallmark Only</option>
+            <option>Acid Tested</option><option>XRF Tested</option>
+            <option>Sold</option><option>Keep / Investment</option>
+          </select>
+        </div>
+        <div class="field full">
+          <label for="itemNotes">Hallmark / test notes</label>
+          <textarea id="itemNotes" rows="3" maxlength="250" placeholder="585 hallmark, stones estimated at 3.5 g…"></textarea>
+        </div>
+      </div>
+
+      <div class="preview-grid" aria-live="polite">
+        <div><span>Net weight</span><strong id="previewNet">0.000 g</strong></div>
+        <div><span>Pure gold</span><strong id="previewPure">0.000 g</strong></div>
+        <div><span>Melt value</span><strong id="previewMelt">$0.00</strong></div>
+        <div><span>Dealer estimate</span><strong id="previewDealer">$0.00</strong></div>
+      </div>
+
+      <div class="dialog-actions">
+        <button type="button" class="secondary-button" id="cancelDialogBtn">Cancel</button>
+        <button type="submit" class="primary-button">Save Item</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="installDialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">iPhone</p>
+        <h2>Install on Home Screen</h2>
+      </div>
+      <button type="button" class="close-button" id="closeInstallBtn" aria-label="Close">×</button>
+    </div>
+    <ol class="install-steps">
+      <li>Open the hosted app link in <strong>Safari</strong>.</li>
+      <li>Tap the <strong>Share</strong> button.</li>
+      <li>Scroll and select <strong>Add to Home Screen</strong>.</li>
+      <li>Keep the name “Gold Tracker” and tap <strong>Add</strong>.</li>
+    </ol>
+    <p>The app will then open from its gold icon and continue working offline after its first successful load.</p>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>window.DEFAULT_GOLD_STATE = {"version":1,"settings":{"spotPrice":3434.37,"dealerPct":0.9,"pawnPct":0.75,"gramsPerOz":31.1035,"valuationDate":"2026-06-30"},"items":[{"id":1,"description":"Gold Bracelet (Twisted)","karat":"18K","grossWeight":27.22,"deduction":0.0,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":2,"description":"Gold Bracelet (Link)","karat":"14K","grossWeight":21.59,"deduction":0.0,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":3,"description":"Gold Necklace (Smooth)","karat":"18K","grossWeight":16.48,"deduction":0.0,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":4,"description":"Gold Necklace (Braided)","karat":"14K","grossWeight":16.1,"deduction":0.0,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":5,"description":"Gold Necklace (TightLink)","karat":"18K","grossWeight":17.53,"deduction":0.0,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":6,"description":"Earrings (Twist)","karat":"14K","grossWeight":8.3,"deduction":0.0,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":7,"description":"Ring (Moon)","karat":"14K","grossWeight":11.26,"deduction":3.5,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":8,"description":"Pendant","karat":"14K","grossWeight":3.77,"deduction":1.5,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":9,"description":"Ring (Ruby)","karat":"14K","grossWeight":9.3,"deduction":4.0,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"},{"id":10,"description":"Ring (Blue Stone)","karat":"14K","grossWeight":10.0,"deduction":4.5,"purityOverride":null,"purchaseCost":null,"notes":"","status":"Unverified"}]};</script>
+  <script src="app.js"></script>
+</body>
+</html>

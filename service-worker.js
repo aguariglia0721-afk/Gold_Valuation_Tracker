@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "gold-valuation-tracker-v1";
+const CACHE_NAME = "gold-valuation-tracker-v2";
 const ASSETS = [
   "./",
   "./index.html",

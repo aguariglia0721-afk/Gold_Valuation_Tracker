@@ -2,7 +2,7 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "goldValuationTracker.v1";
+  const STORAGE_KEY = "goldValuationTracker.v2";
   const PURITIES = { "24K": 1, "22K": 0.916, "18K": 0.75, "14K": 0.583, "10K": 0.417 };
   const HALLMARKS = { "24K": "999 / 999.9", "22K": "916", "18K": "750", "14K": "583 / 585", "10K": "416 / 417", "Custom": "Tested purity" };
   const DEFAULT_STATE = JSON.parse(JSON.stringify(window.DEFAULT_GOLD_STATE));
@@ -25,7 +25,7 @@
 
   function normalizeState(input) {
     const next = clone(input);
-    next.version = 1;
+    next.version = 2;
     next.settings = next.settings || {};
     next.settings.spotPrice = positiveNumber(next.settings.spotPrice, DEFAULT_STATE.settings.spotPrice);
     next.settings.dealerPct = boundedNumber(next.settings.dealerPct, 0, 1, DEFAULT_STATE.settings.dealerPct);
@@ -425,11 +425,11 @@
   }
 
   function resetState() {
-    if (!confirm("Reset the app to the completed tracker and remove changes saved on this device?")) return;
+    if (!confirm("Clear every item and all data saved by this app on this device?")) return;
     state = normalizeState(clone(DEFAULT_STATE));
-    saveState("Reset and saved locally.");
+    saveState("Blank tracker saved locally.");
     renderAll();
-    showToast("Completed tracker restored.");
+    showToast("All app data cleared.");
   }
 
   function showToast(message) {
